@@ -4,10 +4,11 @@ import { Router } from "express";
 
 const router = Router();
 
-import { testUser } from "../controllers/user.js";
+import { register, testUser } from "../controllers/user.js";
 
 //definir las rutas
-router.get('/test-user', testUser);
+router.get("/test-user", testUser);
+router.post("/register", register);
 
 //exportar el modulo router
 

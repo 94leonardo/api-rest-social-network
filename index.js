@@ -16,18 +16,17 @@ connection();
 // Crear servidor de Node
 const app = express();
 const puerto = 3900;
-//configurar rutas
-
-app.use('/api/user', UserRoutes);
-app.use('/api/follow', FollowRoutes);
-app.use('/api/publications', PublicationRoutes);
-
-// Configurar cors: permite que las peticiones se hagan correctamente
-app.use(cors());
-
 // Conversión de datos (body a objetos JS)
 app.use(json());
 app.use(urlencoded({ extended: true }));
+// Configurar cors: permite que las peticiones se hagan correctamente
+app.use(cors());
+
+
+//configurar rutas
+app.use('/api/user', UserRoutes);
+app.use('/api/follow', FollowRoutes);
+app.use('/api/publications', PublicationRoutes);
 
 // Configurar rutas
 app.get('/test-route', (req, res) => {
