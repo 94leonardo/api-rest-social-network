@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "API REST CON STACK MERN Y autentication jwt para red social",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start:watch": "node --watch index.js",

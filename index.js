@@ -1,37 +1,38 @@
-//importaciones
-const connection = require('./database/connection');
-const express = require('express');
-const cors = require('cors');
-// mensaje de bienvenida
-console.log("---!Bienvenido Api node arriba--¡");
-//conexion a la base de datos
+// Importaciones
+import connection from  "./database/connection.js";
+import express, { json, urlencoded } from "express";
+import cors from "cors";
+
+// Mensaje de bienvenida
+console.log("API NODE arriba");
+
+// Conexión a la BD
 connection();
 
-//crear servidor de node
 
+// Crear servidor de Node
 const app = express();
 const puerto = 3900;
 
-//configuracion de los  cors las peticiones se hagan bien en las rutas de los diferentes dominios
-
+// Configurar cors: permite que las peticiones se hagan correctamente
 app.use(cors());
 
-//Convercion de datos (body a objetos JS)
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-//configuracion de las rutas de las peticiones http login y signup
+// Conversión de datos (body a objetos JS)
+app.use(json());
+app.use(urlencoded({extended: true}));
 
-app.get('/test-rout', (req, res) => {
-    return res.status(200).json({
-        'id': 1,
-        'name': 'leonardo',
-        'username': 'leo'
-    })
+// Configurar rutas
+app.get('/test-route', (req, res)=> {
+  return res.status(200).json(
+    {
+      'id': 1,
+      'name': 'leonardo',
+      'username': 'lasso'
+    }
+  );
 })
 
-
-//Configuracion el servidor para escuchar las peticiones http
-
+// Configurar el servidor para escuchar las peticiones HTTP
 app.listen(puerto, () => {
-    console.log(`Escuchando en el puerto ${puerto}`);
-})
+  console.log("Servidor de NODE corriendo en el puerto", puerto)
+});
