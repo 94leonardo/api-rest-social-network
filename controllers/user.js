@@ -71,7 +71,6 @@ export const register = async (req, res) => {
     });
   }
 };
-
 //Metodo para autenticar usuarios
 
 export const login = async (req, res) => {
@@ -115,6 +114,7 @@ export const login = async (req, res) => {
         id: user._id,
         name: user.name,
         last_name: user.last_name,
+        bio: user.bio,
         nick: user.nick,
         email: user.email,
         role: user.role,
@@ -124,9 +124,43 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     console.log("Error en el login del usuario", error);
-    return res.status(500).json({
+    return res.status(500).send({
       status: "error",
       message: "Error en el login del usuario",
     });
   }
 };
+
+//metodo para mostrar el perfil de un usuario
+
+export const profile = async (req, res) => {
+  try {
+    //obtener id del usuario desde los parametros de la url
+
+    const userId = req.params.id;
+    //buscar usuario de la bd exluir la contraseña, rol, version
+    const user = await User.findById(userId).select('-password -role -__v')
+    //verificar si el usuario existe
+    if (!user) {
+
+      return res.status(404).send({
+        status: "error",
+        message: "-!El usuario no encontrado¡",
+      })
+    }
+
+    //devolver el usuario la informacion del perfil
+
+    return res.status(200).json({
+      status: "success",
+      user
+    })
+
+  } catch (error) {
+    console.log("Error al obtener el perfil del usuario;", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Error al obtener el perfil del usuario;",
+    })
+  }
+}
