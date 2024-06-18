@@ -2,6 +2,7 @@ import status from "express/lib/response.js";
 import User from "../models/user.js";
 import bcrypt from "bcrypt";
 import { createToken } from "../services/jwt.js";
+import fs from "fs";
 
 // Acciones de prueba
 export const testUser = (req, res) => {
@@ -131,7 +132,7 @@ export const login = async (req, res) => {
   }
 };
 
-//metodo para mostrar el perfil de un usuario
+//Metodo para mostrar el perfil de un usuario
 
 export const profile = async (req, res) => {
   try {
@@ -139,28 +140,233 @@ export const profile = async (req, res) => {
 
     const userId = req.params.id;
     //buscar usuario de la bd exluir la contraseña, rol, version
-    const user = await User.findById(userId).select('-password -role -__v')
+    const user = await User.findById(userId).select("-password -role -__v");
     //verificar si el usuario existe
     if (!user) {
-
       return res.status(404).send({
         status: "error",
         message: "-!El usuario no encontrado¡",
-      })
+      });
     }
 
-    //devolver el usuario la informacion del perfil
+    //devolver el usuario la información del perfil
 
     return res.status(200).json({
       status: "success",
-      user
-    })
-
+      user,
+    });
   } catch (error) {
     console.log("Error al obtener el perfil del usuario;", error);
     return res.status(500).json({
       status: "error",
       message: "Error al obtener el perfil del usuario;",
-    })
+    });
   }
-}
+};
+
+//metodo para listar usuarios con pagination
+
+export const listUser = async (req, res) => {
+  try {
+    //control en que pagina estamos y que numero de items por pagina
+    let page = req.params.page ? parseInt(req.params.page, 10) : 1;
+    let itemsPerPage = req.query.limit ? parseInt(req.query.limit, 10) : 5;
+
+    //Realizar la consulta a la paginada de mongo
+    const options = {
+      page: page,
+      limit: itemsPerPage,
+      select: "-password -role -__v",
+    };
+
+    const users = await User.paginate({}, options);
+    //si no hay usuarios  en la pagina solicitada
+    if (!users || users.docs.length === 0) {
+      return res.status(404).send({
+        status: "error",
+        message: " No hay usuarios en la pagina solicitada",
+      });
+    }
+    //devolver los usuarios paginados
+
+    return res.status(200).json({
+      status: "success",
+      users: users.docs,
+      totalPages: users.totalPages,
+      totalDocs: users.totalDocs,
+      page: users.page,
+      pagingCounter: users.pagingCounter,
+      hasPrevPage: users.hasPrevPage,
+      hasNextPage: users.hasNextPage,
+      prevPage: users.prevPage,
+      nextPage: users.nextPage,
+    });
+  } catch (error) {
+    console.log("Error al obtener el listado del usuario;", error);
+    return res.status(500).send({
+      status: "error",
+      message: "Error al obtener lista de usuarios",
+    });
+  }
+};
+
+//Método para actualizar usuarios
+
+export const updateUser = async (req, res) => {
+  try {
+    //Recoqer la información del usuario a actualizar
+
+    let userIdentity = req.user;
+    let userToUpdate = req.body;
+    // validar que los datos estém presentes
+
+    if (!userToUpdate.email || !userToUpdate.nick) {
+      return res.status(400).send({
+        status: "Error",
+        message: "!Los datos email y nick Son requeridos!",
+      });
+    }
+
+    //Eliminarcampos sobrantes que no se actualizaron
+
+    delete userToUpdate.iat;
+    delete userToUpdate.exp;
+    delete userToUpdate.role;
+    delete userToUpdate.image;
+
+    //comprobar si el usuario ya existe
+
+    const users = await User.find({
+      //$or -> realizar consulta que consulta con una de estas condicones
+      $or: [
+        { email: userToUpdate.email.toLowerCase() },
+        { nick: userToUpdate.nick.toLowerCase() },
+      ],
+    }).exec();
+
+    //verificación si el usuario esta duplicado y evitar conflicto
+
+    const isDuplicateUser = users.some((user) => {
+      return user && user._id.toString() !== userIdentity.userId;
+    });
+
+    if (isDuplicateUser) {
+      return res.status(400).send({
+        status: "error",
+        message: "!Solo se puede modificar los datos del usuario logeado.!",
+      });
+    }
+    //cifrar la contraseña enviada
+    if (userToUpdate.password) {
+      try {
+        let pwd = await bcrypt.hash(userToUpdate.password, 10);
+        userToUpdate.password = pwd;
+      } catch (hashError) {
+        return res.status(500).send({
+          status: "error",
+          message: "Error al cifrar la contraseña",
+        });
+      }
+    } else {
+      delete userToUpdate.password;
+    }
+
+    //buscar ctualizar el usuario modificado a modificar en la base de datos
+
+    let userUpdated = await user.findByIdAndUpdate(
+      userIdentity.userId,
+      userToUpdate,
+      {
+        new: true,
+      }
+    );
+    if (!userUpdated) {
+      return res.status(400).send({
+        status: "Error",
+        message: "Error No se pudo actualizar el usuario",
+      });
+    }
+    //Devolver respuesta exitosa con el usuario actualizado
+    return res.status(200).json({
+      status: "success",
+      message: "usuario actualizar correctamente",
+      user: userUpdated,
+    });
+  } catch (error) {
+    console.log("Error al actualizar los datos de usuario", error);
+    return res.status(500).send({
+      status: "error",
+      message: "Error al actualizar los datos de usuario",
+    });
+  }
+};
+//método para subir imagen de perfil(Avatar -img de perfil)
+
+export const uploadFile = async (req, res) => {
+  try {
+    //recoger el archivo de imagen y comprobar que exista
+    if (!req.file) {
+      return res.status(404).send({
+        status: "error",
+        message: "la peticion no incluye la imagen",
+      });
+    }
+    //consegir el nombre del archivo
+    let image = req.file.originalname;
+
+    //obtener la extencion del archivo
+    const imageSplit = image.split(".");
+    const extension = imageSplit[imageSplit.length - 1];
+
+    //validar la extencion
+    if (!["png", "jpg", "jpge", "gif"].includes(extension.toLowerCase())) {
+      //Borrar archivos subidos
+      const filePath = req.file.path;
+      fs.unlinkSync(filePath);
+      return res.status(400).send({
+        status: "error",
+        message: "la extensión no es valida",
+      });
+    }
+    //comprobar  tamaño del archivo(pj:maximo 1mb)
+
+    const fileSize = req.file.size;
+    const maxFileSize = 1 * 1024 * 1024; // 5MB
+    if (fileSize > maxFileSize) {
+      const filePath = req.file.path;
+      fs.unlinkSync(filePath);
+      return res.status(400).send({
+        status: "error",
+        message: "El Tamaño del archivo excede el limite (max 1mb)",
+      });
+    }
+
+    //Guarda la imagen en la bd
+
+    const userUpdated = await User.findByIdAndUpdate(
+      { _id: req.user.userId },
+      { image: req.file.filename },
+      { new: true }
+    );
+    //verificacion si la actualizacion fue exitosa
+    if (!userUpdated) {
+      return res.status(400).send({
+        status: "error",
+        message: "Error al subir la imagen",
+      });
+    }
+
+    //devolver respuesta exitosa
+    return res.status(200).json({
+      status: "success",
+      user: userUpdated,
+      file: req.file,
+    });
+  } catch (error) {
+    console.log("Error al subir los archivos", error);
+    return res.status(500).send({
+      status: "error",
+      message: "Error al subir archivos",
+    });
+  }
+};

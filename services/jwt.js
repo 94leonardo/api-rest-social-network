@@ -13,8 +13,10 @@ const createToken = (user) => {
     userId: user._id,
     role: user.role,
     name: user.name,
-    iat: moment().unix(), //fecha de creacion
-    exp: moment().add(30, "days").unix(), //fecha de expiracion
+    //fecha de creacion
+    iat: moment().unix(),
+    //fecha de expiracion
+    exp: moment().add(30, "days").unix(),
   };
   //devolver token creado
   return jwt.encode(payload, secret);
