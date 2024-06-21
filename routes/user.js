@@ -13,6 +13,7 @@ import {
   listUser,
   updateUser,
   uploadFile,
+  avatar
 } from "../controllers/user.js";
 import { ensureAuth } from "../middlewares/auth.js";
 import multer from "multer";
@@ -40,6 +41,7 @@ router.get("/profile/:id", ensureAuth, profile);
 router.get("/list/:page?", ensureAuth, listUser);
 router.put("/update", ensureAuth, updateUser);
 router.post("/upload", [ensureAuth,uploads.single("file0")], uploadFile);
+router.get("/avatar/:file", ensureAuth, avatar);
 
 //exportar el modulo router
 
