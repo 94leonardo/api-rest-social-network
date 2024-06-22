@@ -4,6 +4,9 @@ import bcrypt from "bcrypt";
 import { createToken } from "../services/jwt.js";
 import fs from "fs";
 import path from "path";
+import { followThisUser, followUserIds } from "../services/followServices.js";
+
+
 
 // Acciones de prueba
 export const testUser = (req, res) => {
@@ -133,37 +136,50 @@ export const login = async (req, res) => {
   }
 };
 
-//Metodo para mostrar el perfil de un usuario
-
+// Método para mostrar el perfil del usuario
 export const profile = async (req, res) => {
   try {
-    //obtener id del usuario desde los parametros de la url
 
+    // Obtener el ID del usuario desde los parámetros de la URL
     const userId = req.params.id;
-    //buscar usuario de la bd exluir la contraseña, rol, version
-    const user = await User.findById(userId).select("-password -role -__v");
-    //verificar si el usuario existe
-    if (!user) {
+
+    // Verificar si el ID recibido del usuario autenticado existe
+    if (!req.user || !req.user.userId) {
       return res.status(404).send({
         status: "error",
-        message: "-!El usuario no encontrado¡",
+        message: "Usuario no autenticado"
       });
     }
 
-    //devolver el usuario la información del perfil
+    // Buscar al usuario en la BD, excluimos la contraseña, rol, versión.
+    const userProfile = await User.findById(userId).select('-password -role -__v');
 
+    // Verificar si el usuario existe
+    if (!userProfile) {
+      return res.status(404).send({
+        status: "error",
+        message: "Usuario no encontrado"
+      });
+    }
+
+    // Información de seguimiento - (req.user.userId = Id del usuario autenticado) 
+    const followInfo = await followThisUser(req.user.userId, userId);
+
+    // Devolver la información del perfil del usuario
     return res.status(200).json({
       status: "success",
-      user,
+      user: userProfile,
+      followInfo
     });
+
   } catch (error) {
-    console.log("Error al obtener el perfil del usuario;", error);
-    return res.status(500).json({
+    console.log("Error al botener el perfil del usuario:", error);
+    return res.status(500).send({
       status: "error",
-      message: "Error al obtener el perfil del usuario;",
+      message: "Error al obtener el perfil del usuario"
     });
   }
-};
+}
 
 //metodo para listar usuarios con pagination
 
@@ -188,6 +204,9 @@ export const listUser = async (req, res) => {
         message: " No hay usuarios en la pagina solicitada",
       });
     }
+    //listar los seguidores de un usuario, obtener el array de ids de los usuarios que sigo
+
+    let followUsers = await followUserIds(req);
     //devolver los usuarios paginados
 
     return res.status(200).json({
@@ -201,6 +220,10 @@ export const listUser = async (req, res) => {
       hasNextPage: users.hasNextPage,
       prevPage: users.prevPage,
       nextPage: users.nextPage,
+      users_following: followUsers.following,
+      users_followers_me: followUsers.followers
+
+
     });
   } catch (error) {
     console.log("Error al obtener el listado del usuario;", error);
@@ -375,7 +398,6 @@ export const uploadFile = async (req, res) => {
 
 export const avatar = async (req, res) => {
   try {
-
     //Obtener el parametro de la url de la imagen
     const file = req.params.file;
     //Obtener el path real de la imagen
@@ -385,15 +407,12 @@ export const avatar = async (req, res) => {
       if (!exists) {
         return res.status(404).send({
           status: "error",
-          message: "La imagen no existe"
-        })
+          message: "La imagen no existe",
+        });
       }
       //devolver el archivo
-      return res.sendFile(path.resolve(filePath))
-
-    })
-
-
+      return res.sendFile(path.resolve(filePath));
+    });
   } catch (error) {
     console.log("Error al mostrar imagen ", error);
     return res.status(500).send({
