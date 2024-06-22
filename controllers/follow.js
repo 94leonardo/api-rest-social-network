@@ -204,3 +204,56 @@ export const following = async (req, res) => {
 };
 
 // Método para listar los usuarios que me siguen
+
+
+export const followers = async (req, res) => {
+  try {
+    //obtener id del usuario identificado
+    let userId = req.user && req.user.userId ? req.user.userId : undefined;
+    //comprobar si llega el ID por parametros en la urk (este es prioritario)
+    if (req.params.id) page = req.params.id;
+
+    //asignar el numero de pagina
+    let page = req.params.page ? parseInt(req.params.page, 10) : 1;
+
+    //numero de usuarios que queremos mostrar por pagina
+    let itemsPerPage = req.query.limit ? parseInt(req.query.limit, 10) : 5;
+
+    //configurar las opciones de la consulta
+    const options = {
+      page: page,
+      limit: itemsPerPage,
+      select: "-password -role -__v",
+      populate: {
+        path: 'following_user',
+        select: '-password -role -__v'
+      },
+      lean: true
+    }
+
+    //buscar en la base de datos los usuarios que me siguen
+    const follows = await Follow.paginate({ followed_user: userId }, options);
+
+    //listar los seguidores de un usuario, obtener el array de ids de los usuarios que sigo
+
+    let followUsers = await followUserIds(req);
+
+    //devolver resouesta
+    return res.status(200).send({
+      status: "success",
+      message: "listado de usuarios que me sigen",
+      follows: follows.docs,
+      total: follows.totalDocs,
+      pages: follows.totalPages,
+      page: follows.page,
+      limit: follows.limit,
+      users_following: followUsers.following,
+      users_followers_me: followUsers.followers
+    });
+  } catch (error) {
+    return res.status(500).send({
+      status: "error",
+      message: "Error al listar los usuarios que estas siguiendo.",
+    });
+  }
+};
