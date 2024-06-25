@@ -152,7 +152,7 @@ export const profile = async (req, res) => {
     }
 
     // Buscar al usuario en la BD, excluimos la contraseña, rol, versión.
-    const userProfile = await User.findById(userId).select('-password -role -__v');
+    const userProfile = await User.findById(userId).select('-password -role -__v -email');
 
     // Verificar si el usuario existe
     if (!userProfile) {
@@ -193,7 +193,7 @@ export const listUser = async (req, res) => {
     const options = {
       page: page,
       limit: itemsPerPage,
-      select: "-password -role -__v",
+      select: "-password -role -__v -email",
     };
 
     const users = await User.paginate({}, options);

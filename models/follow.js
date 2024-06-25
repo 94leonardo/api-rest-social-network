@@ -19,7 +19,7 @@ const FollowSchema = Schema({
 });
 
 // Definir índice único compuesto para followin_user y followed_user
-FollowSchema.index({ following_user: 1, followed_user: 1}, {unique: true});
+FollowSchema.index({ following_user: 1, followed_user: 1 }, { unique: true });
 
 // Añadir pluggin de paginación
 FollowSchema.plugin(mongoosePaginate);

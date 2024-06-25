@@ -26,7 +26,7 @@ app.use(cors());
 //configurar rutas
 app.use('/api/user', UserRoutes);
 app.use('/api/follow', FollowRoutes);
-app.use('/api/publications', PublicationRoutes);
+app.use('/api/publication', PublicationRoutes);
 
 // Configurar rutas
 app.get('/test-route', (req, res) => {

@@ -226,7 +226,7 @@ export const followers = async (req, res) => {
       select: "-password -role -__v",
       populate: {
         path: 'following_user',
-        select: '-password -role -__v'
+        select: '-password -role -__v -email'
       },
       lean: true
     }

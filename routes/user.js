@@ -29,7 +29,7 @@ const storage = multer.diskStorage({
 });
 
 //Middleware para subida de archivos
-const uploads = multer({storage});
+const uploads = multer({ storage });
 
 
 
@@ -40,8 +40,8 @@ router.post("/login", login);
 router.get("/profile/:id", ensureAuth, profile);
 router.get("/list/:page?", ensureAuth, listUser);
 router.put("/update", ensureAuth, updateUser);
-router.post("/upload", [ensureAuth,uploads.single("file0")], uploadFile);
-router.get("/avatar/:file", ensureAuth, avatar);
+router.post("/upload", [ensureAuth, uploads.single("file0")], uploadFile);
+router.get("/avatar/:file", avatar);
 
 //exportar el modulo router
 
