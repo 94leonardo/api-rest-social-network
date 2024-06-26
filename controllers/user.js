@@ -1,12 +1,11 @@
-import status from "express/lib/response.js";
+import Follow from "../models/follow.js";
 import User from "../models/user.js";
+import Publication from "../models/publication.js";
 import bcrypt from "bcrypt";
 import { createToken } from "../services/jwt.js";
 import fs from "fs";
 import path from "path";
 import { followThisUser, followUserIds } from "../services/followServices.js";
-
-
 
 // Acciones de prueba
 export const testUser = (req, res) => {
@@ -139,7 +138,6 @@ export const login = async (req, res) => {
 // Método para mostrar el perfil del usuario
 export const profile = async (req, res) => {
   try {
-
     // Obtener el ID del usuario desde los parámetros de la URL
     const userId = req.params.id;
 
@@ -147,39 +145,40 @@ export const profile = async (req, res) => {
     if (!req.user || !req.user.userId) {
       return res.status(404).send({
         status: "error",
-        message: "Usuario no autenticado"
+        message: "Usuario no autenticado",
       });
     }
 
     // Buscar al usuario en la BD, excluimos la contraseña, rol, versión.
-    const userProfile = await User.findById(userId).select('-password -role -__v -email');
+    const userProfile = await User.findById(userId).select(
+      "-password -role -__v -email"
+    );
 
     // Verificar si el usuario existe
     if (!userProfile) {
       return res.status(404).send({
         status: "error",
-        message: "Usuario no encontrado"
+        message: "Usuario no encontrado",
       });
     }
 
-    // Información de seguimiento - (req.user.userId = Id del usuario autenticado) 
+    // Información de seguimiento - (req.user.userId = Id del usuario autenticado)
     const followInfo = await followThisUser(req.user.userId, userId);
 
     // Devolver la información del perfil del usuario
     return res.status(200).json({
       status: "success",
       user: userProfile,
-      followInfo
+      followInfo,
     });
-
   } catch (error) {
     console.log("Error al botener el perfil del usuario:", error);
     return res.status(500).send({
       status: "error",
-      message: "Error al obtener el perfil del usuario"
+      message: "Error al obtener el perfil del usuario",
     });
   }
-}
+};
 
 //metodo para listar usuarios con pagination
 
@@ -221,9 +220,7 @@ export const listUser = async (req, res) => {
       prevPage: users.prevPage,
       nextPage: users.nextPage,
       users_following: followUsers.following,
-      users_followers_me: followUsers.followers
-
-
+      users_followers_me: followUsers.followers,
     });
   } catch (error) {
     console.log("Error al obtener el listado del usuario;", error);
@@ -418,6 +415,61 @@ export const avatar = async (req, res) => {
     return res.status(500).send({
       status: "error",
       message: "Error al mostrar Avater",
+    });
+  }
+};
+
+// Método para mostrar el contador de seguidores
+export const counters = async (req, res) => {
+  try {
+    // Obtener el id del usuarios autenticado desde el token
+    let userId = req.user.userId;
+
+    // En caso de llegar el id del usuario en los parametros (por la url) se toma como prioritario
+    if (req.params.id) {
+      userId = req.params.id;
+    }
+
+    // Buscar el usuario por su userId para obtener nombre y apellido
+    const user = await User.findById(userId, { name: 1, last_name: 1 });
+
+    // Si no encuentra al usuario
+    if (!user) {
+      return res.status(404).send({
+        status: "error",
+        message: "Usuario no encontrado",
+      });
+    }
+
+    // Contar el número de usuarios que yo sigo (o el usuario autenticado)
+    const followingCount = await Follow.countDocuments({
+      following_user: userId,
+    });
+
+    // Contar el número de usuarios que me siguen a mi (o al usuario autenticado)
+    const followedCount = await Follow.countDocuments({
+      followed_user: userId,
+    });
+
+    // Contar el número de publicaciones que ha realizado el usuario
+    const publicationsCount = await Publication.countDocuments({
+      user_id: userId,
+    });
+
+    // Devolver respuesta exitosa
+    return res.status(200).json({
+      status: "success",
+      userId,
+      name: user.name,
+      last_name: user.last_name,
+      following: followingCount,
+      followed: followedCount,
+      publications: publicationsCount,
+    });
+  } catch (error) {
+    return res.status(500).send({
+      status: "error",
+      message: "Error en los contadores",
     });
   }
 };

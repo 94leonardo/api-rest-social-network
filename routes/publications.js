@@ -1,23 +1,21 @@
-//importaciones
-
 import { Router } from "express";
-
 const router = Router();
-
 import {
   testPublication,
   savePublication,
   showPublication,
   deletePublication,
-  PublicationsUser,
+  publicationsUser,
   uploadMedia,
   showMedia,
-  feed
+  feed,
 } from "../controllers/publications.js";
 import { ensureAuth } from "../middlewares/auth.js";
 import multer from "multer";
+import Publication from "../models/publication.js";
+import { checkEntityExists } from "../middlewares/checkEntityExists.js";
 
-//consfiguracion de subida de archivos
+// Configuración de subida de archivos
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "./uploads/publications/");
@@ -27,20 +25,22 @@ const storage = multer.diskStorage({
   },
 });
 
-//Middleware para subida de archivos
+// Middleware para subida de archivos
 const uploads = multer({ storage });
 
-//definir las rutas
-router.get("/test-publication", ensureAuth, testPublication);
+// Definir las rutas
+router.get("/test-publication", testPublication);
 router.post("/new-publication", ensureAuth, savePublication);
 router.get("/show-publication/:id", ensureAuth, showPublication);
 router.delete("/delete-publication/:id", ensureAuth, deletePublication);
-router.get("/publication-user/:id/:page?", ensureAuth, PublicationsUser);
-router.post("/upload-media/:id", [ensureAuth, uploads.single("file0")], uploadMedia);
+router.get("/publications-user/:id/:page?", ensureAuth, publicationsUser);
+router.post(
+  "/upload-media/:id",
+  [ensureAuth, checkEntityExists(Publication, "id"), uploads.single("file0")],
+  uploadMedia
+);
 router.get("/media/:file", showMedia);
 router.get("/feed/:page?", ensureAuth, feed);
 
-
-//exportar el modulo router
-
+// Exportar el Router
 export default router;

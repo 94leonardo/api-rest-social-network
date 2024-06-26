@@ -13,7 +13,8 @@ import {
   listUser,
   updateUser,
   uploadFile,
-  avatar
+  avatar,
+  counters,
 } from "../controllers/user.js";
 import { ensureAuth } from "../middlewares/auth.js";
 import multer from "multer";
@@ -30,9 +31,7 @@ const storage = multer.diskStorage({
 
 //Middleware para subida de archivos
 const uploads = multer({ storage });
-
-
-
+  
 //definir las rutas
 router.get("/test-user", ensureAuth, testUser);
 router.post("/register", register);
@@ -42,6 +41,7 @@ router.get("/list/:page?", ensureAuth, listUser);
 router.put("/update", ensureAuth, updateUser);
 router.post("/upload", [ensureAuth, uploads.single("file0")], uploadFile);
 router.get("/avatar/:file", avatar);
+router.get("/counter/:id?", ensureAuth, counters);
 
 //exportar el modulo router
 
