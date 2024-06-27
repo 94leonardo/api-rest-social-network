@@ -65,7 +65,12 @@ export const register = async (req, res) => {
     return res.status(201).json({
       status: "success",
       message: "Usuario registrado con éxito",
-      user: user_to_save,
+      user: {
+        id: user_to_save.id,
+        name: user_to_save.name,
+        last_name: user_to_save.last_name,
+        nick: user_to_save.nick,
+      }
     });
   } catch (error) {
     console.log("Error en registro de usuario:", error);
