@@ -12,7 +12,6 @@ console.log("API NODE arriba");
 // Conexión a la BD
 connection();
 
-
 // Crear servidor de Node
 const app = express();
 const puerto = 3900;
@@ -22,24 +21,21 @@ app.use(urlencoded({ extended: true }));
 // Configurar cors: permite que las peticiones se hagan correctamente
 app.use(cors());
 
-
 //configurar rutas
-app.use('/api/user', UserRoutes);
-app.use('/api/follow', FollowRoutes);
-app.use('/api/publication', PublicationRoutes);
+app.use("/api/user", UserRoutes);
+app.use("/api/follow", FollowRoutes);
+app.use("/api/publication", PublicationRoutes);
 
 // Configurar rutas
-app.get('/test-route', (req, res) => {
-  return res.status(200).json(
-    {
-      'id': 1,
-      'name': 'leonardo',
-      'username': 'lasso'
-    }
-  );
-})
+app.get("/test-route", (req, res) => {
+  return res.status(200).json({
+    id: 1,
+    name: "leonardo",
+    username: "lasso",
+  });
+});
 
 // Configurar el servidor para escuchar las peticiones HTTP
 app.listen(puerto, () => {
-  console.log("Servidor de NODE corriendo en el puerto", puerto)
+  console.log("Servidor de NODE corriendo en el puerto", puerto);
 });
