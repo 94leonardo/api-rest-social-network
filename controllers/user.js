@@ -297,7 +297,7 @@ export const updateUser = async (req, res) => {
       delete userToUpdate.password;
     }
 
-    //buscar ctualizar el usuario modificado a modificar en la base de datos
+    //buscar actualizar el usuario modificado a modificar en la base de datos
 
     let userUpdated = await User.findByIdAndUpdate(
       userIdentity.userId,
